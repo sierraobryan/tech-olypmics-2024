@@ -1,0 +1,147 @@
+// Classifier Variable
+let classifier;
+// Model URL
+let imageModelURL = "https://teachablemachine.withgoogle.com/models/9xqmvU2mt/" ;
+
+// Video
+let video;
+let flippedVideo;
+// To store the classification
+let canvasLabel = "";
+
+// Load the model first
+function preload() {
+  classifier = ml5.imageClassifier(imageModelURL + 'model.json');
+}
+
+function setup() {
+  createCanvas(500, 500);
+
+  //assign the default emoji and default text
+  myEmoji = "⌚️"
+  computerEmoji = "💻"
+  gameText = "who will win?"
+  myScore = 0
+  computerScore = 0
+  predictedClass = "Please Wait"
+  // Create the video
+  video = createCapture(VIDEO);
+  video.size(250, 250);
+  video.hide();
+
+  flippedVideo = ml5.flipImage(video);
+  // Start classifying
+  classifyVideo();
+  getComputerEmoji(); 
+}
+
+function draw() {
+
+  background(255);
+
+  // Draw the video
+  image(flippedVideo, 0, 250);
+  fill("black");
+  textSize(100);
+  text(myEmoji, 125, 150);
+  text(computerEmoji, 400, 150);
+
+  // Put the Predicted Class at the bottom of the canvas
+  textSize(16);
+  text(gameText, 250, 200); 
+  text(myScore, 125, 50); 
+  text(computerScore, 400, 50); 
+  
+  fill(255);
+  textAlign(CENTER);
+  text(predictedClass, 250 / 2, height - 4);
+}
+
+// Get a prediction for the current video frame
+function classifyVideo() {
+  flippedVideo = ml5.flipImage(video)
+  //runs gotResult() once the model is loaded
+  classifier.classify(flippedVideo, gotResult);
+  flippedVideo.remove();
+
+}
+
+
+// When we get a result
+function gotResult(error, results) {
+  // If there is an error
+  if (error) {
+    console.error(error);
+    return;
+  }
+  // The results are in an array ordered by the model's confidence in it's prediction.
+  // The first result in the array (results[0]) is the model's best guess at the class.
+  // Store the model's prediction in a variable called predictedClass
+  predictedClass = results[0].label;
+
+  lastEmoji = myEmoji
+
+  //this code updates the emoji based on the predicted class
+  if (predictedClass === 'rock') {
+    myEmoji = "🪨"
+  }
+  //TODO: add an else if statement on line 77 that uses the 'Thumbs Down' condition
+  else if (predictedClass === 'paper') {
+     myEmoji = "🗞️"
+  }
+  else if (predictedClass === 'scissors') {
+     myEmoji = "✂️"
+  }
+    
+  else {
+    myEmoji = "❓"
+  }
+  // Classifiy again! This is an example of recursion, which means a function calls itself
+  if (myEmoji != lastEmoji) {
+    determineWinner(); 
+  }
+  classifyVideo();
+}
+
+function getComputerEmoji() {
+  const emojis = ["✂️", "🗞️", "🪨"];
+  setInterval(() => {
+      const randomIndex = Math.floor(Math.random() * emojis.length);
+      computerEmoji = emojis[randomIndex];
+      determineWinner(); 
+  }, 5000); // 5000 milliseconds = 5 seconds
+}
+
+function determineWinner() {
+  if (computerEmoji == "🪨") {
+    if (myEmoji == "🗞️") {
+      gameText = "your paper beats their rock! you win!"
+      myScore = myScore + 1
+    } else if (myEmoji == "🪨") {
+      gameText = "you both have rock! you tie!"
+    } else {
+      gameText = "their rock beats your scissors! you lose this time!"
+      computerScore = computerScore + 1
+    }
+  } else if (computerEmoji == "🗞️") {
+    if (myEmoji == "🗞️") {
+      gameText = "two papers! you tie!"
+    } else if (myEmoji == "✂️") {
+      gameText = "your scissors beats their paper! you win!"
+      myScore = myScore + 1
+    } else {
+      gameText = "their paper beats your rock! better luck next time"
+      computerScore = computerScore + 1
+    }
+  } else if (computerEmoji == "✂️") {
+    if (myEmoji == "✂️") {
+      gameText = "you tie! try again"
+    } else if (myEmoji == "🪨") {
+      gameText = "your rock beats their scissors! you win!"
+      myScore = myScore + 1
+    } else {
+      gameText = "their scissors beats your paper! better luck next time!"
+      computerScore = computerScore + 1
+    }
+  }
+} 
